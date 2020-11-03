@@ -61,8 +61,6 @@ class ParticleSwarmOptimizer:
                 "fitness": particle.fitness
             }
         if not self.best_g["fitness"] or particle.fitness > self.best_g["fitness"]:
-            if self.best_g["fitness"]:
-                self.best_g_history.append(self.best_g["fitness"])
             self.best_g = {
                 "position": particle.x,
                 "fitness": particle.fitness
