@@ -13,7 +13,7 @@ class Particle:
         }
 
     def distance(self, target):
-        return np.linalg.norm(np.subtract(target, self.x))
+        return np.subtract(target, self.x)
 
 
 class ParticleSwarmOptimizer:
