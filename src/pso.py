@@ -76,7 +76,7 @@ class ParticleSwarmOptimizer:
                     valid_move = (new_position >= self.var_min) and (new_position <= self.var_max)
                 if new_position:
                     particle.x = new_position
-                self.evaluate_fitness(particle)
+                    self.evaluate_fitness(particle)
             self.best_g_history.append(self.best_g)
             self.w *= self.w_damp
             if verbose:
