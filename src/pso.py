@@ -81,4 +81,4 @@ class ParticleSwarmOptimizer:
             self.w *= self.w_damp
             if verbose:
                 print(f"Iteration {i}/{self.max_it}; Best particle id: {self.best_g['id']}; Best fitness: {self.best_g['fitness']}")
-            return self.best_g, self.best_g_history
+        return self.best_g, self.best_g_history
