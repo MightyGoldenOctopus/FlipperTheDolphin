@@ -8,7 +8,7 @@ class Particle:
         self.x = x
         self.v = v
         self.best_p = {
-            "position:": x,
+            "position": x,
             "fitness": fitness
         }
 
@@ -52,7 +52,7 @@ class ParticleSwarmOptimizer:
                                              high=self.var_max,
                                              size=(self.n_var,))
             velocity = np.zeros(shape=(self.n_var,))
-            self.population[i] = Particle(None, i, position, velocity)
+            self.population[i] = Particle(i, None, position, velocity)
             self.evaluate_fitness(self.population[i])
 
 
@@ -78,20 +78,27 @@ class ParticleSwarmOptimizer:
         for i in t:
             for id, particle in self.population.items():
                 valid_move, new_position, timeout = False, None, 10
+
                 while not valid_move and timeout > 0:
                     timeout -= 1
-                    new_velocity = self.w * particle.v \
-                        + self.c1 * np.random.uniform(size=(self.n_var,)) * particle.distance(particle.best_p["position"]) \
-                        + self.c2 * np.random.uniform(size=(self.n_var,)) * particle.distance(self.best_g["position"])
+                    new_velocity = (
+                          self.w * particle.v
+                        + self.c1 * np.random.uniform(size=(self.n_var,)) *
+                            particle.distance(particle.best_p["position"])
+                        + self.c2 * np.random.uniform(size=(self.n_var,)) *
+                            particle.distance(self.best_g["position"])
+                    )
                     new_position = particle.x + new_velocity
-                    valid_move = (new_position >= self.var_min) and (new_position <= self.var_max)
-                if new_position:
+                    valid_move = np.all(new_position >= self.var_min) and np.all(new_position <= self.var_max)
+
+                if valid_move:
                     particle.x = new_position
                     self.evaluate_fitness(particle)
+
             self.best_g_history.append(self.best_g)
             self.w *= self.w_damp
 
-            t.set_description(f"PSO run (best particle id: {self.best_g['id']}, best fitness: {self.best_g['fitness']})")
+            t.set_description(f"PSO run (best particle id: {self.best_g['id']}, best fitness: {self.best_g['fitness']:.3f})")
             t.refresh() # to show immediately the update
 
         return self.best_g, self.best_g_history
