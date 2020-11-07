@@ -45,6 +45,7 @@ class Jump:
         return res
 
     def get_assets(self, date="2020-09-30"):
+        portfolio_id = None
         asset_dict = {}
         date_obj = datetime.strptime(date, '%Y-%m-%d')
         res = json.loads(
@@ -64,6 +65,7 @@ class Jump:
             type = asset["TYPE"]["value"]
             converted = False
             if "LAST_CLOSE_VALUE_IN_CURR" not in asset:
+                portfolio_id = asset["ASSET_DATABASE_ID"]["value"]
                 continue
             value, currency = asset["LAST_CLOSE_VALUE_IN_CURR"]["value"].split(" ")
             value, value_usd = float(value.replace(",", ".")), float(value.replace(",", "."))
@@ -78,7 +80,7 @@ class Jump:
                 "converted": converted,
                 "date": date
             }
-        return asset_dict
+        return asset_dict, portfolio_id
 
     def get_asset(self, asset_id, start_date="2016-06-01", end_date="2020-09-30"):
         values_list = []
@@ -92,7 +94,7 @@ class Jump:
             )
         )
         # Get asset info for currency conversion
-        currency = self.get_assets()[f"{asset_id}"]["original_currency"]
+        currency = self.get_assets()[0][f"{asset_id}"]["original_currency"]
         for value in res:
             date = value["date"]["value"]
             date_obj = datetime.strptime(date, '%Y-%m-%d')
