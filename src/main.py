@@ -75,18 +75,18 @@ def compute_fitness(x):
 PSO = ParticleSwarmOptimizer(
     params={
         "max_it": 100,
-        "pop_size": 500,
+        "pop_size": 1000,
         "hyperparameters": {
-            "inertia": 1,
-            "inertia_dampening": 0.7,
-            "cognitive_acceleration": 0.001,
-            "social_acceleration": 0.01,
+            "inertia": 0.09,
+            "inertia_dampening": 0.99,
+            "cognitive_acceleration": 1.0,
+            "social_acceleration": 1.0,
         }
     },
     constraints={
         "n_var": len(asset_dict),
-        "var_min": 0.00,
-        "var_max": 1,
+        "var_min": 0.01,
+        "var_max": 0.10,
     },
     fitness_function=compute_fitness,
 )

@@ -51,7 +51,7 @@ class ParticleSwarmOptimizer:
             position = np.random.uniform(low=self.var_min,
                                              high=self.var_max,
                                              size=(self.n_var,))
-            velocity = np.zeros(shape=(self.n_var,))
+            velocity = np.random.uniform(low=-0.1, high=0.1, size=(self.n_var,))
             self.population[i] = Particle(i, None, position, velocity)
             self.evaluate_fitness(self.population[i])
 
@@ -59,12 +59,12 @@ class ParticleSwarmOptimizer:
     def evaluate_fitness(self, particle):
         particle.fitness = self.fitness_function(particle.x)
 
-        if not particle.best_p["fitness"] or particle.best_p["fitness"] > particle.best_p["fitness"]:
+        if not particle.best_p["fitness"] or particle.fitness > particle.best_p["fitness"]:
             particle.best_p = {
                 "position": particle.x,
                 "fitness": particle.fitness
             }
-        if not self.best_g["fitness"] or particle.best_p["fitness"] > self.best_g["fitness"]:
+        if not self.best_g["fitness"] or particle.fitness > self.best_g["fitness"]:
             self.best_g = {
                 "id": particle.id,
                 "position": particle.x,
