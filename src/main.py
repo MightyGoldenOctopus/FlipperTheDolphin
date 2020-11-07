@@ -85,7 +85,7 @@ PSO = ParticleSwarmOptimizer(
     },
     constraints={
         "n_var": len(asset_dict),
-        "var_min": 0.01,
+        "var_min": 0.00,
         "var_max": 0.10,
     },
     fitness_function=compute_fitness,

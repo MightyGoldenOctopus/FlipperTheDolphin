@@ -89,7 +89,7 @@ class ParticleSwarmOptimizer:
                             particle.distance(self.best_g["position"])
                     )
                     new_position = particle.x + new_velocity
-                    new_position /= np.linalg.norm(new_position)
+                    new_position /= np.sum(new_position)
                     valid_move = np.all(new_position >= self.var_min) and np.all(new_position <= self.var_max)
 
                 if valid_move:
