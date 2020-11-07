@@ -5,6 +5,9 @@ import urllib3
 import json
 import os
 
+from tqdm import tqdm
+import numpy as np
+
 urllib3.disable_warnings()
 
 
@@ -12,6 +15,10 @@ class Jump:
     def __init__(self):
         self.user = os.getenv('API_USER')
         self.password = os.getenv('API_PASSWORD')
+
+        if self.user is None or self.password is None:
+            raise Exception("missing user or password")
+
         self.url = "https://dolphin.jump-technology.com:8443/api/v1/"
         self.c = CurrencyConverter(fallback_on_missing_rate=True)
 
@@ -60,6 +67,7 @@ class Jump:
                 }
             )
         )
+
         for asset in res:
             id = asset["ASSET_DATABASE_ID"]["value"]
             type = asset["TYPE"]["value"]
@@ -101,7 +109,12 @@ class Jump:
             nav = nav_usd = float(value["nav"]["value"].replace(",", "."))
             gross = gross_usd = float(value["gross"]["value"].replace(",", "."))
             pl = float(value["pl"]["value"].replace(",", "."))
-            close = close_usd = float(value["real_close_price"]["value"].replace(",", "."))
+
+            if "real_close_price" not in value:
+                close = close_usd = 0.0 # :'(
+            else:
+                close = close_usd = float(value["real_close_price"]["value"].replace(",", "."))
+
             ret = float(value["return"]["value"].replace(",", "."))
             converted = False
             if currency != "USD":
@@ -127,6 +140,16 @@ class Jump:
                 }
             })
         return values_list
+
+
+    def get_assets_with_all_informations(self, start_date="2016-06-01", end_date="2020-09-30"):
+        assets, portfolio_id = self.get_assets()
+
+        for key in tqdm(assets.keys()):
+            assets[key]["values"] = self.get_asset(key, start_date, end_date)
+
+        return assets, portfolio_id
+
 
     def get_ratio(self):
         res = json.loads(
