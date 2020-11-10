@@ -46,7 +46,7 @@ def get_asset_returns(asset):
         for i in range(nb_days):
             returns.append(prev_value + diff * i)
 
-        prev_value = values["return"]
+        prev_value = values[i - 1]# Get the previous value
         prev_date = current_date
 
     return returns
