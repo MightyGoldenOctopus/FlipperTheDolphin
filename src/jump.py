@@ -90,6 +90,25 @@ class Jump:
             }
         return asset_dict, portfolio_id
 
+
+    def get_all_assets(self, file_name):
+        if os.path.exists(file_name):
+            with open(file_name, "r") as f:
+                result = json.load(f)
+
+        else:
+            assets, portfolio_id = self.get_assets_with_all_informations()
+            result = {
+                "assets": assets,
+                "portfolio_id": portfolio_id,
+            }
+
+            with open(file_name, "w") as f:
+                json.dump(result, f)
+
+        return result["assets"], result["portfolio_id"]
+
+
     def get_asset(self, asset_id, start_date="2016-06-01", end_date="2020-09-30"):
         values_list = []
         res = json.loads(
