@@ -39,16 +39,20 @@ pub struct PSOConstraints {
     pub n_var: usize,
     pub var_min: f64,
     pub var_max: f64,
+    pub min_diff_titles: f64,
+    pub min_propor_stocks: f64,
 }
 
 #[pymethods]
 impl PSOConstraints {
     #[new]
-    pub fn new(n_var: usize, var_min: f64, var_max: f64) -> Self {
+    pub fn new(n_var: usize, var_min: f64, var_max: f64, min_diff_titles: f64, min_propor_stocks: f64) -> Self {
         PSOConstraints {
             n_var,
             var_min,
             var_max,
+            min_diff_titles,
+            min_propor_stocks,
         }
     }
 }
