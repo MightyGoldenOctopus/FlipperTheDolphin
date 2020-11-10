@@ -43,8 +43,9 @@ def get_asset_returns(asset):
         nb_days = (current_date - prev_date).days
         diff = (values["return"] - prev_value) / nb_days
 
-        for i in range(nb_days):
-            returns.append(prev_value + diff * i)
+        for i in range(nb_days - 1):
+            returns.append(prev_value)
+        returns.append(values["return"])
 
         prev_value = values["return"]
         prev_date = current_date
