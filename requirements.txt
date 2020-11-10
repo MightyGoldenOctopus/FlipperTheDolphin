@@ -3,3 +3,5 @@ requests~=2.24.0
 urllib3~=1.25.11
 currencyconverter~=0.14.4
 tqdm~=4.48.0
+setuptools-rust>=0.10.2
+pytest>=3.5.0
