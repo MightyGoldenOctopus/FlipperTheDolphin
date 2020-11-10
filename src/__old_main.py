@@ -6,7 +6,9 @@ import numpy as np
 from datetime import date, datetime, timedelta
 
 from jump import Jump
-from pso import ParticleSwarmOptimizer
+#from pso import ParticleSwarmOptimizer
+
+from pso import *
 
 jump = Jump()
 
@@ -74,6 +76,26 @@ def compute_fitness(x):
 
 
 PSO = ParticleSwarmOptimizer(
+    population_size=100,
+    hyperparameters=PSOHyperparameters(
+        inertia = 0.09,
+        inertia_dampening = 0.99,
+        cognitive_acceleration = 1.0,
+        social_acceleration = 1.0,
+    ),
+    constraints=PSOConstraints(
+        n_var = len(asset_dict),
+        var_min = 0.00,
+        var_max = 0.10,
+    ),
+    values=mean_returns,
+    covariance_matrix=returns_covariance,
+)
+
+best_particle = PSO.run(1000)
+
+"""
+PSO = ParticleSwarmOptimizer(
     params={
         "max_it": 100,
         "pop_size": 1000,
@@ -91,6 +113,4 @@ PSO = ParticleSwarmOptimizer(
     },
     fitness_function=compute_fitness,
 )
-
-PSO.initialize()
-PSO.run()
+"""
