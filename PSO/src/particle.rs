@@ -36,8 +36,10 @@ impl Ord for Particle {
 
 impl Particle {
     pub fn create_random_particle(constraints: &PSOConstraints) -> Particle {
-        let position = Array1::random((constraints.n_var,), Uniform::new(constraints.var_min, constraints.var_max));
+        let mut position = Array1::random((constraints.n_var,), Uniform::new(constraints.var_min, constraints.var_max));
         let velocity = Array1::random((constraints.n_var,), Uniform::new(-0.1, 0.1));
+
+        position /= position.scalar_sum();
 
         Particle {
             best_position: position.clone(),
@@ -47,11 +49,12 @@ impl Particle {
         }
     }
 
-    pub fn random_move(&self, n_var: usize, best_position: &Array1<f64>, hp: &PSOHyperparameters) -> (Array1<f64>, Array1<f64>) {
+    pub fn random_move(&self, n_var: usize, best_position: &Array1<f64>, hp: &PSOHyperparameters, disabled_particules: &Array1<f64>) -> (Array1<f64>, Array1<f64>) {
         let dv1 = hp.social_acceleration * Array1::random((n_var,), Uniform::new(0., 1.));
         let dv2 = hp.cognitive_acceleration * Array1::random((n_var,), Uniform::new(0., 1.));
 
-        let velocity = &self.velocity * hp.inertia_dampening + dv1*best_position + dv2*&self.best_position;
+        let mut velocity = &self.velocity * hp.inertia_dampening + dv1*best_position + dv2*&self.best_position;
+        velocity *= disabled_particules;
 
         let mut position = &self.position + &velocity;
         position /= position.scalar_sum();
