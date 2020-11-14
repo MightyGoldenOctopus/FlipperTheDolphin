@@ -77,9 +77,7 @@ impl ParticleSwarmOptimizer {
     /**
      * compute a particle fitness
      */
-    pub fn compute_fitness(&self, particle: &Particle) -> f64 {
-        let x = &particle.position;
-
+    pub fn compute_fitness(&self, x: &Array1<f64>) -> f64 {
         //FIXME replace 0
         return (x.t().dot(&self.values) - 0.) / (self.covariance_matrix.dot(x).dot(&x.t()))
     }
@@ -198,7 +196,7 @@ impl ParticleSwarmOptimizer {
                             p.apply_move(
                                 p.position.clone(),
                                 p.velocity.clone(),
-                                self.compute_fitness(&p)
+                                self.compute_fitness(&p.position)
                             );
                       });
         self.retrieve_best_particle();
@@ -215,7 +213,7 @@ impl ParticleSwarmOptimizer {
             self.particles.write().unwrap().par_iter_mut()
                           .for_each(|p| {
                               if let Some((vel, pos)) = self.generate_valid_move(&p) {
-                                  let fitness = self.compute_fitness(&p);
+                                  let fitness = self.compute_fitness(&p.position);
                                   p.apply_move(pos, vel, fitness);
                               }
                           });
@@ -340,5 +338,20 @@ impl ParticleSwarmOptimizer {
         }
 
         Ok((result.into_pyarray(_py), history.into_pyarray(_py)))
+    }
+
+    pub fn fitness(&self, particle: PyReadonlyArrayDyn<f64>) -> PyResult<f64> {
+        if particle.shape().len() != 1 {
+            return Err(exceptions::PyValueError::new_err("particle should be a 1d array"));
+        }
+
+        let shape = (particle.shape()[0], );
+
+        let particle = Array1::from_shape_vec(
+            shape,
+            particle.to_vec()?
+        ).unwrap();
+
+        Ok(self.compute_fitness(&particle))
     }
 }
