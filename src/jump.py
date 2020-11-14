@@ -10,7 +10,6 @@ import numpy as np
 
 urllib3.disable_warnings()
 
-
 class Jump:
     def __init__(self):
         self.user = os.getenv('API_USER')
@@ -33,26 +32,29 @@ class Jump:
             self.url + endpoint + args_string,
             params=payload,
             auth=(self.user, self.password),
-            verify=False
+            verify=False,
         )
         return res.content.decode("utf-8")
 
     def __put_data(self, endpoint, data):
         res = requests.put(
             self.url + endpoint,
-            data=data
+            data=data,
+            auth=(self.user, self.password),
+            verify=False,
         )
         return res
 
-    def __post_data(self, endpoint, data):
+    def __post_data(self, endpoint, json):
         res = requests.post(
             self.url + endpoint,
-            data=data
+            json=json,
+            auth=(self.user, self.password),
+            verify=False,
         )
         return res
 
     def get_assets(self, date="2020-09-30"):
-        portfolio_id = None
         asset_dict = {}
         date_obj = datetime.strptime(date, '%Y-%m-%d')
         res = json.loads(
@@ -70,25 +72,34 @@ class Jump:
 
         for asset in res:
             id = asset["ASSET_DATABASE_ID"]["value"]
+            label = asset["LABEL"]["value"]
             type = asset["TYPE"]["value"]
+
             converted = False
+
             if "LAST_CLOSE_VALUE_IN_CURR" not in asset:
-                portfolio_id = asset["ASSET_DATABASE_ID"]["value"]
-                continue
-            value, currency = asset["LAST_CLOSE_VALUE_IN_CURR"]["value"].split(" ")
-            value, value_usd = float(value.replace(",", ".")), float(value.replace(",", "."))
-            if currency != "USD":
-                converted = True
-                value_usd = self.c.convert(value, currency, "USD", date=date_obj)
+                type = "OUR_PORTFOLIO"
+                value, currency = 0, "EUR"
+                value, value_usd = 0, 0
+
+            else:
+                value, currency = asset["LAST_CLOSE_VALUE_IN_CURR"]["value"].split(" ")
+                value, value_usd = float(value.replace(",", ".")), float(value.replace(",", "."))
+                if currency != "USD":
+                    converted = True
+                    value_usd = self.c.convert(value, currency, "USD", date=date_obj)
+
             asset_dict[id] = {
                 "type": type,
                 "last_close": value,
                 "last_close_usd": value_usd,
                 "original_currency": currency,
                 "converted": converted,
+                "label": label,
                 "date": date
             }
-        return asset_dict, portfolio_id
+
+        return asset_dict
 
 
     def get_all_assets(self, file_name):
@@ -97,19 +108,18 @@ class Jump:
                 result = json.load(f)
 
         else:
-            assets, portfolio_id = self.get_assets_with_all_informations()
+            assets = self.get_assets_with_all_informations()
             result = {
                 "assets": assets,
-                "portfolio_id": portfolio_id,
             }
 
             with open(file_name, "w") as f:
                 json.dump(result, f)
 
-        return result["assets"], result["portfolio_id"]
+        return result["assets"]
 
 
-    def get_asset(self, asset_id, start_date="2016-06-01", end_date="2020-09-30"):
+    def get_asset(self, base_asset, asset_id, start_date="2016-06-01", end_date="2020-09-30"):
         values_list = []
         res = json.loads(
             self.__get_data(
@@ -121,7 +131,7 @@ class Jump:
             )
         )
         # Get asset info for currency conversion
-        currency = self.get_assets()[0][f"{asset_id}"]["original_currency"]
+        currency = base_asset["original_currency"]
         for value in res:
             date = value["date"]["value"]
             date_obj = datetime.strptime(date, '%Y-%m-%d')
@@ -136,6 +146,7 @@ class Jump:
 
             ret = float(value["return"]["value"].replace(",", "."))
             converted = False
+            print(json.dumps(value, indent=4))
             if currency != "USD":
                 converted = True
                 nav_usd = self.c.convert(nav_usd, currency, "USD", date=date_obj)
@@ -162,12 +173,12 @@ class Jump:
 
 
     def get_assets_with_all_informations(self, start_date="2016-06-01", end_date="2020-09-30"):
-        assets, portfolio_id = self.get_assets()
+        assets = self.get_assets()
 
         for key in tqdm(assets.keys()):
-            assets[key]["values"] = self.get_asset(key, start_date, end_date)
+            assets[key]["values"] = self.get_asset(assets[key], key, start_date, end_date)
 
-        return assets, portfolio_id
+        return assets
 
 
     def get_ratio(self):
@@ -196,17 +207,19 @@ class Jump:
         return res
 
     def calculate_ratio(self, ratio_ids, asset_ids, start_date="2016-06-01", end_date="2020-09-30"):
-        payload = json.dumps({
+        payload = {
             "_ratio": ratio_ids,
             "_asset": asset_ids,
             "_bench": None,
             "_startDate": start_date,
             "_endDate": end_date,
             "_frequency": None
-        })
+        }
+        print(json.dumps(payload, indent=4))
+
         res = self.__post_data(
             endpoint="ratio/invoke",
-            data=payload
+            json=payload
         )
         return res
 
