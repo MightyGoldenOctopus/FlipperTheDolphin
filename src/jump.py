@@ -78,7 +78,6 @@ class Jump:
             converted = False
 
             if "LAST_CLOSE_VALUE_IN_CURR" not in asset:
-                type = "OUR_PORTFOLIO"
                 value, currency = 0, "EUR"
                 value, value_usd = 0, 0
 
@@ -102,13 +101,13 @@ class Jump:
         return asset_dict
 
 
-    def get_all_assets(self, file_name):
+    def get_all_assets(self, file_name, start_date="2016-06-01"):
         if os.path.exists(file_name):
             with open(file_name, "r") as f:
                 result = json.load(f)
 
         else:
-            assets = self.get_assets_with_all_informations()
+            assets = self.get_assets_with_all_informations(start_date=start_date)
             result = {
                 "assets": assets,
             }
@@ -146,7 +145,7 @@ class Jump:
 
             ret = float(value["return"]["value"].replace(",", "."))
             converted = False
-            print(json.dumps(value, indent=4))
+
             if currency != "USD":
                 converted = True
                 nav_usd = self.c.convert(nav_usd, currency, "USD", date=date_obj)
@@ -206,21 +205,21 @@ class Jump:
         )
         return res
 
-    def calculate_ratio(self, ratio_ids, asset_ids, start_date="2016-06-01", end_date="2020-09-30"):
+    def calculate_ratio(self, ratio_ids, asset_ids, start_date="2016-06-01", end_date="2020-09-30", bench=None, frequency=None):
         payload = {
-            "_ratio": ratio_ids,
-            "_asset": asset_ids,
-            "_bench": None,
-            "_startDate": start_date,
-            "_endDate": end_date,
-            "_frequency": None
+            "ratio": ratio_ids,
+            "asset": asset_ids,
+            "bench": bench,
+            "start_date": start_date,
+            "end_date": end_date,
+            "frequency": frequency,
         }
-        print(json.dumps(payload, indent=4))
 
         res = self.__post_data(
             endpoint="ratio/invoke",
             json=payload
         )
+
         return res
 
     def currency_conversion(self, origin_curr, target_curr):
