@@ -65,7 +65,7 @@ pub struct ParticleSwarmOptimizer {
 
     disabled_particules: Array1<f64>,
     values: Array1<f64>,
-    covariance_matrix: Array2<f64>,
+    std: Array1<f64>,
 
     best_particle: Particle,
     best_valid_particle: Option<Particle>,
@@ -79,7 +79,7 @@ impl ParticleSwarmOptimizer {
      */
     pub fn compute_fitness(&self, x: &Array1<f64>) -> f64 {
         //FIXME replace 0
-        return (x.t().dot(&self.values) - 0.) / (self.covariance_matrix.dot(x).dot(&x.t()))
+        (x.t().dot(&self.values) - 0.0) / x.t().dot(&self.std)
     }
 
     pub fn asset_to_remove(&self) -> usize {
@@ -256,14 +256,14 @@ impl ParticleSwarmOptimizer {
                hyperparameters: PSOHyperparameters,
                constraints: PSOConstraints,
                values: PyReadonlyArrayDyn<f64>,
-               covariance_matrix: PyReadonlyArrayDyn<f64>) -> PyResult<Self> {
+               std: PyReadonlyArrayDyn<f64>) -> PyResult<Self> {
 
         if values.shape().len() != 1 {
             return Err(exceptions::PyValueError::new_err("values should be a 1d array"));
         }
 
-        if covariance_matrix.shape().len() != 2 {
-            return Err(exceptions::PyValueError::new_err("covariance_matrix should be a 2d array"));
+        if std.shape().len() != 1 {
+            return Err(exceptions::PyValueError::new_err("std should be a 1d array"));
         }
 
         let shape = (values.shape()[0], );
@@ -273,9 +273,9 @@ impl ParticleSwarmOptimizer {
             values.to_vec()?
         ).unwrap();
 
-        let covariance_matrix = Array2::from_shape_vec(
-            (covariance_matrix.shape()[0], covariance_matrix.shape()[1]),
-            covariance_matrix.to_vec()?
+        let std = Array1::from_shape_vec(
+            (std.shape()[0],),
+            std.to_vec()?
         ).expect("value error");
 
         let particles = (0..population_size).into_par_iter().map(
@@ -292,7 +292,7 @@ impl ParticleSwarmOptimizer {
             hyperparameters,
             particles: RwLock::new(particles),
             values,
-            covariance_matrix,
+            std,
             disabled_particules: Array1::ones(shape),
         })
     }
