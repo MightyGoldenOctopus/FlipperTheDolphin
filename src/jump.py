@@ -84,9 +84,9 @@ class Jump:
             else:
                 value, currency = asset["LAST_CLOSE_VALUE_IN_CURR"]["value"].split(" ")
                 value, value_usd = float(value.replace(",", ".")), float(value.replace(",", "."))
-                if currency != "USD":
+                if currency != "EUR":
                     converted = True
-                    value_usd = self.c.convert(value, currency, "USD", date=date_obj)
+                    value_usd = self.c.convert(value, currency, "EUR", date=date_obj)
 
             asset_dict[id] = {
                 "type": type,
@@ -146,11 +146,11 @@ class Jump:
             ret = float(value["return"]["value"].replace(",", "."))
             converted = False
 
-            if currency != "USD":
+            if currency != "EUR":
                 converted = True
-                nav_usd = self.c.convert(nav_usd, currency, "USD", date=date_obj)
-                gross_usd = self.c.convert(gross_usd, currency, "USD", date=date_obj)
-                close_usd = self.c.convert(close_usd, currency, "USD", date=date_obj)
+                nav_usd = self.c.convert(nav_usd, currency, "EUR", date=date_obj)
+                gross_usd = self.c.convert(gross_usd, currency, "EUR", date=date_obj)
+                close_usd = self.c.convert(close_usd, currency, "EUR", date=date_obj)
             values_list.append({
                 "date": date,
                 "pl": pl,

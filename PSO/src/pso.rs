@@ -64,8 +64,11 @@ pub struct ParticleSwarmOptimizer {
     particles: RwLock<Vec<Particle>>,
 
     disabled_particules: Array1<f64>,
-    values: Array1<f64>,
-    std: Array1<f64>,
+
+    day_count: f64,
+    end_values: Array1<f64>,
+    beg_values: Array1<f64>,
+    cov: Array2<f64>,
 
     best_particle: Particle,
     best_valid_particle: Option<Particle>,
@@ -74,12 +77,29 @@ pub struct ParticleSwarmOptimizer {
 }
 
 impl ParticleSwarmOptimizer {
+    pub fn daily_returns(&self, navs: &Array1<f64>) -> Array1<f64> {
+        let count = navs.shape()[0];
+        let mut result = Array1::zeros((count - 1, ));
+
+        for i in 1..count {
+            result[i - 1] = (navs[i] - navs[i - 1]) / navs[i - 1];
+        }
+
+        result
+    }
+
     /**
      * compute a particle fitness
      */
     pub fn compute_fitness(&self, x: &Array1<f64>) -> f64 {
-        //FIXME replace 0
-        (x.t().dot(&self.values) - 0.0) / x.t().dot(&self.std)
+        let roi = self.end_values.dot(&(x / &self.beg_values)).powf(252. / self.day_count) - 1.0;
+
+        let navs = (x / &self.cov.t().slice(s![0, ..])).dot(&self.cov);
+        let returns = self.daily_returns(&navs);
+
+        let vol = returns.std_axis(Axis(0), 1.0)[()] * 252_f64.sqrt();
+
+        (roi - 0.005) / vol
     }
 
     pub fn asset_to_remove(&self) -> usize {
@@ -255,27 +275,34 @@ impl ParticleSwarmOptimizer {
     pub fn new(population_size: usize,
                hyperparameters: PSOHyperparameters,
                constraints: PSOConstraints,
-               values: PyReadonlyArrayDyn<f64>,
-               std: PyReadonlyArrayDyn<f64>) -> PyResult<Self> {
+               beg_values: PyReadonlyArrayDyn<f64>,
+               end_values: PyReadonlyArrayDyn<f64>,
+               cov: PyReadonlyArrayDyn<f64>,
+               day_count: f64,
+            ) -> PyResult<Self> {
 
-        if values.shape().len() != 1 {
+        if beg_values.shape().len() != 1 || end_values.shape().len() != 1 {
             return Err(exceptions::PyValueError::new_err("values should be a 1d array"));
         }
 
-        if std.shape().len() != 1 {
-            return Err(exceptions::PyValueError::new_err("std should be a 1d array"));
+        if cov.shape().len() != 2 {
+            return Err(exceptions::PyValueError::new_err("cov should be a 2d array"));
         }
 
-        let shape = (values.shape()[0], );
-
-        let values = Array1::from_shape_vec(
+        let shape = (beg_values.shape()[0], );
+        let beg_values = Array1::from_shape_vec(
             shape,
-            values.to_vec()?
+            beg_values.to_vec()?
         ).unwrap();
 
-        let std = Array1::from_shape_vec(
-            (std.shape()[0],),
-            std.to_vec()?
+        let end_values = Array1::from_shape_vec(
+            shape,
+            end_values.to_vec()?
+        ).unwrap();
+
+        let cov = Array2::from_shape_vec(
+            (cov.shape()[0], cov.shape()[1]),
+            cov.to_vec()?
         ).expect("value error");
 
         let particles = (0..population_size).into_par_iter().map(
@@ -291,8 +318,12 @@ impl ParticleSwarmOptimizer {
             constraints,
             hyperparameters,
             particles: RwLock::new(particles),
-            values,
-            std,
+
+            beg_values,
+            end_values,
+            cov,
+            day_count,
+
             disabled_particules: Array1::ones(shape),
         })
     }

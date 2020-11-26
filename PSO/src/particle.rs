@@ -45,7 +45,7 @@ impl Particle {
             best_position: position.clone(),
             position,
             velocity,
-            best_fitness: 0.0,
+            best_fitness: std::f64::NEG_INFINITY,
         }
     }
 
